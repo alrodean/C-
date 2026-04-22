@@ -25,9 +25,12 @@ struct Customer
 struct Transaction
 {
     char accountNumber[10];
-    char type[10];
+    char type[20];
     double amount;
+    char targetAccount[10];
 };
+
+void saveTransaction(const char accNum[], const char transType[], double amount, const char targetAcc[]);
 
 void createTeller()
 {
@@ -217,12 +220,101 @@ bool loginCustomer(Customer &loggedIn)
     return false;
 }
 
-void saveTransaction(const char accNum[], const char transType[], double amount){
+void transfer(Customer &c){
+
+    char targetAcc[10];
+    double amount;
+    Customer target;
+    bool found = false;
+
+    cout << "Enter target account number: ";
+    cin >> targetAcc;
+
+    if(strcmp(targetAcc, c.accountNumber) == 0){
+        cout << "You can't transfer to your own account!" << endl;
+        return;
+    }
+
+    cout << "Enter amount to transfer: ";
+    cin >> amount;
+
+    if(cin.fail()){
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Please enter a valid number..." << endl;
+        return;
+    }
+
+    if(amount <= 0){
+        cout << "Amount must be more than 0!" << endl;
+        return;
+    }
+
+    if(amount > c.balance){
+        cout << "Insufficient funds!" << endl;
+        return;
+    }
+    ifstream inFile("customers.dat", ios::binary);
+
+    if(!inFile){
+        cout << "File Error" << endl;
+        return;
+    }
+
+    while(inFile.read((char*)&target, sizeof(target))){
+        if(strcmp(target.accountNumber, targetAcc) == 0){
+            found = true;
+            break;
+        }
+    }
+    inFile.close();
+
+    if(!found){
+        cout << "Target account not found!" << endl;
+        return;
+    }
+    c.balance -= amount;
+    target.balance += amount;
+
+    fstream f("customers.dat", ios::binary | ios::in | ios::out);
+
+    if(!f){
+        cout << "File Error!" << endl;
+        return;
+    }
+    Customer temp;
+
+    while(f.read((char*)&temp, sizeof(temp))){
+        if(strcmp(temp.accountNumber, c.accountNumber) == 0){
+            f.seekp(-sizeof(temp), ios::cur);
+            f.write((char*)&c, sizeof(c));
+            f.seekg(f.tellp());
+        }
+
+        else if(strcmp(temp.accountNumber , target.accountNumber) == 0){
+            f.seekp(-sizeof(temp), ios::cur);
+            f.write((char*)&target, sizeof( target));
+            f.seekg(f.tellp());
+        }
+    }
+    f.close();
+
+    saveTransaction(c.accountNumber, "Transfer OUT", amount, target.accountNumber);
+    saveTransaction(target.accountNumber, "Transfer IN", amount, c.accountNumber);
+
+    cout << "Transfer Successful" << endl;
+    cout << "New Balance: " << c.balance << endl;
+    
+}
+
+
+void saveTransaction(const char accNum[], const char transType[], double amount, const char targetAcc[]){
     Transaction t;
 
     strcpy(t.accountNumber, accNum);
     strcpy(t.type, transType);
     t.amount = amount;
+    strcpy(t.targetAccount, targetAcc);
 
     ofstream f("transactions.dat", ios::binary | ios::app);
     if(!f){
@@ -250,7 +342,11 @@ void viewTransactions(const Customer &c){
 
     while(f.read((char*)&t, sizeof(t))){
         if(strcmp(t.accountNumber, c.accountNumber) == 0){
-            cout << "Type: " << t.type << " | Amount: " << t.amount << endl;
+            cout << "Type: " << t.type << " | Amount: " << t.amount;
+            if(strlen(t.targetAccount) > 0){
+                cout <<" Target: " << t.targetAccount;
+            }
+            cout << endl;
             found = true;
         }
     }
@@ -292,7 +388,7 @@ void deposit(Customer &c){
         }
     }
     f.close();
-    saveTransaction(c.accountNumber, "Deposit", amount);
+    saveTransaction(c.accountNumber, "Deposit", amount,"");
     cout << "Deposit Successful! New Balance: " << c.balance << endl;
 }
 
@@ -339,10 +435,9 @@ void withdraw(Customer &c){
         }
     }
     f.close();
-    saveTransaction(c.accountNumber, "Withdraw", amount);
+    saveTransaction(c.accountNumber, "Withdraw", amount,"");
     cout << "Withdrawal Successful! New Balance: " << c.balance << endl;
 }
-
 
 
 
@@ -354,8 +449,9 @@ void customerMenu(Customer &c){
         cout << "1. View Balance\n";
         cout << "2. Deposit\n";
         cout << "3. Withdraw\n";
-        cout << "4. View Transactions\n";
-        cout << "5. Exit\n";
+        cout << "4. Transfer\n";
+        cout << "5. View Transactions\n";
+        cout << "6. Exit\n";
         cout << "Enter choice: ";
         cin >> choice;
 
@@ -379,16 +475,19 @@ void customerMenu(Customer &c){
             withdraw(c);
             break;
         case 4:
-            viewTransactions(c);
+            transfer(c);
             break;
         case 5:
+            viewTransactions(c);
+            break;
+        case 6:
             cout << "Exiting..." << endl;
             break;
         default:
             cout << "Invalid Option" << endl;
             break;
         }
-    }while (choice != 5);
+    }while (choice != 6);
 }
 
 
