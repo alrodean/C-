@@ -131,7 +131,8 @@ void createCustomer()
     cout << "Enter Account Number" << endl;
     cin >> c.accountNumber;
     cout << "Enter Customer Name" << endl;
-    cin >> c.name;
+    cin.ignore();
+    cin.getline(c.name, 32);
     cout << "Enter PIN (5-Digit)" << endl;
     cin >> c.pin;
     cout << "Enter Opening Balance" << endl;
@@ -439,8 +440,80 @@ void withdraw(Customer &c){
     cout << "Withdrawal Successful! New Balance: " << c.balance << endl;
 }
 
+void searchCustomer(){
+    char searchAcc[10];
+    Customer c;
+    bool found = false;
 
+    cout << "Enter account number to search: ";
+    cin >> searchAcc;
 
+    ifstream f("customers.dat", ios::binary);
+
+    if(!f){
+        cout << "File Error!" << endl;
+        return;
+    }
+    
+    while(f.read((char*)& c, sizeof(c))){
+        if(strcmp(c.accountNumber, searchAcc) == 0){
+            cout << "\nCustomer Found!" << endl;
+            cout << "\nAccount Number: " << c.accountNumber << endl;
+            cout << "\nName: " << c.name << endl;
+            cout << "\nPIN: " << c.pin << endl;
+            cout << "\nBalance: " << c.balance << endl;
+            cout << "\nBranch: " << c.branch << endl;
+            found = true;
+            break;
+        }
+    }
+    f.close();
+
+    if(!found){
+        cout << "Customer not found!" << endl;
+    }
+}
+
+void tellerMenu(){
+    int choice;
+
+    do{
+        cout << "\nTeller Menu" << endl;
+        cout << "1. Create Customers\n";
+        cout << "2. View Customer\n";
+        cout << "3. Search Customer\n";
+        cout << "4. Exit\n";
+        cout << "Enter choice: ";
+
+        cin >> choice;
+
+        if(cin.fail()){
+            cin.clear();
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Please enter numbers only!" << endl;
+            choice = 0;
+            continue;
+        }
+
+        switch (choice)
+        {
+        case 1:
+            createCustomer();
+            break;
+        case 2:
+            readCustomer();
+            break;
+        case 3:
+            searchCustomer();
+            break;
+        case 4:
+            cout << "Logging out..." << endl;
+            break;
+        default:
+            break;
+        }
+    } while(choice != 4);
+}
 void customerMenu(Customer &c){
     int choice;
 
@@ -494,17 +567,52 @@ void customerMenu(Customer &c){
 
 int main()
 {
-    createTeller();
-    if (loginTeller())
-    {
-        createCustomer();
-        readCustomer();
+   int choice;
 
-        Customer loggedIn;
-        if(loginCustomer(loggedIn)){
-            customerMenu(loggedIn);
-        }
-        
+   ifstream check("tellers.dat", ios::binary);
+
+   if(!check){
+    createTeller();
+   }
+   check.close();
+
+   do{
+    cout << "\nMain Menu\n";
+    cout << "1. Teller Login\n";
+    cout << "2. Customer Login\n";
+    cout << "3. Exit\n";
+    cout << "Enter Choice: ";
+    cin >> choice;
+
+    if(cin.fail()){
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Please enter numbers only!" << endl;
+        choice = 0;
+        continue;
     }
-    return 0;
+
+    switch(choice){
+        case 1:
+            if(loginTeller()){
+                tellerMenu();
+            }
+            break;
+        case 2:{
+            Customer loggedIn;
+            if(loginCustomer(loggedIn)){
+                customerMenu(loggedIn);
+            }
+            break;
+        }
+        case 3:
+            cout << "Program Closed!" << endl;
+            break;
+        
+        default: 
+            cout << "Invalid Choice!" << endl;
+    }
+
+   }while(choice != 3);
+   return 0;
 }
