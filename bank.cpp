@@ -30,6 +30,23 @@ struct Transaction
     char targetAccount[10];
 };
 
+
+void encryptText(char text[], int shift)
+{
+    for (int i = 0; text[i] != '\0'; i++)
+    {
+        char c = text[i];
+        if (c >= 'a' && c <= 'z')
+        {
+            text[i] = (c - 'a' + shift) % 26 + 'a';
+        }
+        else if (c >= 'A' && c <= 'Z')
+        {
+            text[i] = (c - 'A' + shift) % 26 + 'A';
+        }
+    }
+}
+
 void saveTransaction(const char accNum[], const char transType[], double amount, const char targetAcc[]);
 
 void createTeller()
@@ -38,7 +55,7 @@ void createTeller()
 
     strcpy(t.id, "T001");
     strcpy(t.name, "Admin");
-    strcpy(t.password, "1234");
+    strcpy(t.password, "1111");
     strcpy(t.branch, "CPT");
 
     ofstream f("tellers.dat", ios::binary);
@@ -72,6 +89,8 @@ void readTeller()
         cout << "ID: " << t.id << endl;
         cout << "Name: " << t.name << endl;
         cout << "Password: " << t.password << endl;
+        encryptText(t.password, 3);
+        cout << "Password (Encrypted): " << t.password << endl;
         cout << "Branch: " << t.branch << endl;
     }
 
@@ -92,6 +111,7 @@ bool loginTeller()
         cout << "Enter Teller ID" << endl;
         cin >> inputID;
         cout << "Enter Password" << endl;
+        encryptText(inputPassword, 3);
         cin >> inputPassword;
 
         ifstream f("tellers.dat", ios::binary);
