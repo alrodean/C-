@@ -35,15 +35,7 @@ void encryptText(char text[], int shift)
 {
     for (int i = 0; text[i] != '\0'; i++)
     {
-        char c = text[i];
-        if (c >= 'a' && c <= 'z')
-        {
-            text[i] = (c - 'a' + shift) % 26 + 'a';
-        }
-        else if (c >= 'A' && c <= 'Z')
-        {
-            text[i] = (c - 'A' + shift) % 26 + 'A';
-        }
+        text[i] = text[i] + shift;
     }
 }
 
@@ -56,6 +48,7 @@ void createTeller()
     strcpy(t.id, "T001");
     strcpy(t.name, "Admin");
     strcpy(t.password, "1111");
+    encryptText(t.password, 3);
     strcpy(t.branch, "CPT");
 
     ofstream f("tellers.dat", ios::binary);
@@ -88,10 +81,7 @@ void readTeller()
     {
         cout << "ID: " << t.id << endl;
         cout << "Name: " << t.name << endl;
-        cout << "Password: " << t.password << endl;
-        encryptText(t.password, 3);
-        cout << "Password (Encrypted): " << t.password << endl;
-        cout << "Branch: " << t.branch << endl;
+        cout << "Password: [ENCRYPTED]" << endl;
     }
 
     f.close();
@@ -111,8 +101,8 @@ bool loginTeller()
         cout << "Enter Teller ID" << endl;
         cin >> inputID;
         cout << "Enter Password" << endl;
-        encryptText(inputPassword, 3);
         cin >> inputPassword;
+        encryptText(inputPassword, 3);
 
         ifstream f("tellers.dat", ios::binary);
 
@@ -155,6 +145,7 @@ void createCustomer()
     cin.getline(c.name, 32);
     cout << "Enter PIN (5-Digit)" << endl;
     cin >> c.pin;
+    encryptText(c.pin, 3);
     cout << "Enter Opening Balance" << endl;
     cin >> c.balance;
     cout << "Enter Branch Code" << endl;
@@ -190,7 +181,7 @@ void readCustomer()
     {
         cout << "\nAccount Number: " << c.accountNumber << endl;
         cout << "Name: " << c.name << endl;
-        cout << "Pin: " << c.pin << endl;
+        cout << "Pin: [ENCRYPTED]" << endl;
         cout << "Balance: " << c.balance << endl;
         cout << "Branch: " << c.branch << endl;
     }
@@ -213,6 +204,7 @@ bool loginCustomer(Customer &loggedIn)
         cin >> inputAcc;
         cout << "Enter your PIN" << endl;
         cin >> inputPin;
+        encryptText(inputPin, 3);
 
         ifstream f("customers.dat", ios::binary);
 
@@ -480,7 +472,7 @@ void searchCustomer(){
             cout << "\nCustomer Found!" << endl;
             cout << "\nAccount Number: " << c.accountNumber << endl;
             cout << "\nName: " << c.name << endl;
-            cout << "\nPIN: " << c.pin << endl;
+            cout << "\nPIN: [ENCRYPTED]" << endl;
             cout << "\nBalance: " << c.balance << endl;
             cout << "\nBranch: " << c.branch << endl;
             found = true;
@@ -530,6 +522,7 @@ void tellerMenu(){
             cout << "Logging out..." << endl;
             break;
         default:
+            cout << "Invalid Option!" << endl;
             break;
         }
     } while(choice != 4);
